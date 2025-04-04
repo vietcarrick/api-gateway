@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  api:
+    container_name: api_gateway
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=api_gateway
+      - MONGODB_URL=mongodb://mongo:27017
+      - MONGODB_DB=api_gateway_logs
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379 
+      - REDIS_PASSWORD=
+      - SECRET_KEY=supersecretkey
+    depends_on:
+      - postgres
+      - mongo
+      - redis
+    restart: unless-stopped
+    networks:
+      - api_gateway_network
+
+  postgres:
+    container_name: api_gateway_postgres
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=api_gateway
+    ports:
+      - "5678:5432"
+    networks:
+      - api_gateway_network
+    restart: unless-stopped
+
+  mongo:
+    container_name: api_gateway_mongo
+    image: mongo:6
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27018:27017"
+    networks:
+      - api_gateway_network
+    restart: unless-stopped
+
+  redis:
+    container_name: api_gateway_redis
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6380:6379" 
+    networks:
+      - api_gateway_network
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
+
+networks:
+  api_gateway_network:
+    driver: bridge
